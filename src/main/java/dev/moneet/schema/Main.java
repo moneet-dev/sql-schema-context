@@ -1,12 +1,8 @@
 package dev.moneet.schema;
 
-import dev.moneet.schema.context.ContextStrategy;
-import dev.moneet.schema.context.FocusedSchemaStrategy;
-import dev.moneet.schema.context.FullSchemaStrategy;
-import dev.moneet.schema.context.SchemaContextEngine;
+import dev.moneet.schema.context.*;
 import dev.moneet.schema.domain.DatabaseSchema;
-import dev.moneet.schema.graph.SchemaGraph;
-import dev.moneet.schema.graph.SchemaGraphBuilder;
+import dev.moneet.schema.graph.*;
 import dev.moneet.schema.jdbc.JdbcSchemaMetadataSource;
 
 import java.sql.Connection;
@@ -16,204 +12,186 @@ import java.sql.Statement;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        System.out.println("========================================");
-        System.out.println("   Schema Context Library Demo");
-        System.out.println("========================================\n");
 
-        // Create in-memory SQLite database with production-like schema
+        banner();
+
         Connection conn = DriverManager.getConnection("jdbc:sqlite::memory:");
         createProductionDatabase(conn);
 
-        // Load schema metadata
-        System.out.println("1. LOADING SCHEMA FROM DATABASE...\n");
-        DatabaseSchema schema = new JdbcSchemaMetadataSource(conn, null).load();
+        System.out.println("\n1. LOADING SCHEMA...");
+        DatabaseSchema schema =
+                new JdbcSchemaMetadataSource(conn, null).load();
 
-        // Display schema details
-        displaySchemaDetails(schema);
+        System.out.println("\n2. BUILDING GRAPH...");
+        SchemaGraph graph =
+                new SchemaGraphBuilder().build(schema);
 
-        // Build dependency graph
-        System.out.println("\n2. BUILDING DEPENDENCY GRAPH...\n");
-        SchemaGraph graph = new SchemaGraphBuilder().build(schema);
+        displaySchema(schema);
+        displayGraphInsights(graph);
 
-        // Display dependency tree
-        displayDependencyTree(graph);
-
-        // Generate context queries
-        System.out.println("\n3. GENERATING SCHEMA CONTEXTS...\n");
-        generateContextQueries(schema, graph);
+        System.out.println("\n3. CONTEXT GENERATION...");
+        demonstrateContextStrategies(schema, graph);
 
         conn.close();
-        System.out.println("\n========================================");
-        System.out.println("   Demo Complete");
+        System.out.println("\nDemo complete.");
+    }
+
+    // ---------------------------------------------------
+    // Banner
+    // ---------------------------------------------------
+
+    private static void banner() {
+        System.out.println("========================================");
+        System.out.println("   Schema Context Engine (v0.2 Demo)");
         System.out.println("========================================");
     }
 
+    // ---------------------------------------------------
+    // Schema Creation
+    // ---------------------------------------------------
+
     private static void createProductionDatabase(Connection conn) throws Exception {
-        System.out.println("Creating production-like schema...\n");
 
         try (Statement stmt = conn.createStatement()) {
-            // Companies table
+
             stmt.execute("""
                 CREATE TABLE companies (
                     id INTEGER PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    industry TEXT,
-                    founded_year INTEGER
+                    name TEXT NOT NULL
                 )
             """);
 
-            // Users table
             stmt.execute("""
                 CREATE TABLE users (
                     id INTEGER PRIMARY KEY,
                     company_id INTEGER NOT NULL,
-                    email TEXT UNIQUE NOT NULL,
-                    first_name TEXT,
-                    last_name TEXT,
-                    created_at TEXT,
+                    email TEXT NOT NULL,
                     FOREIGN KEY(company_id) REFERENCES companies(id)
                 )
             """);
 
-            // Accounts table
             stmt.execute("""
                 CREATE TABLE accounts (
                     id INTEGER PRIMARY KEY,
                     company_id INTEGER NOT NULL,
-                    account_type TEXT,
-                    balance DECIMAL,
-                    created_at TEXT,
                     FOREIGN KEY(company_id) REFERENCES companies(id)
                 )
             """);
 
-            // Products table
-            stmt.execute("""
-                CREATE TABLE products (
-                    id INTEGER PRIMARY KEY,
-                    company_id INTEGER NOT NULL,
-                    name TEXT NOT NULL,
-                    price DECIMAL,
-                    stock_quantity INTEGER,
-                    FOREIGN KEY(company_id) REFERENCES companies(id)
-                )
-            """);
-
-            // Orders table
             stmt.execute("""
                 CREATE TABLE orders (
                     id INTEGER PRIMARY KEY,
                     user_id INTEGER NOT NULL,
                     account_id INTEGER,
-                    order_date TEXT,
-                    total_amount DECIMAL,
-                    status TEXT,
                     FOREIGN KEY(user_id) REFERENCES users(id),
                     FOREIGN KEY(account_id) REFERENCES accounts(id)
                 )
             """);
 
-            // Order Items table
+            stmt.execute("""
+                CREATE TABLE products (
+                    id INTEGER PRIMARY KEY,
+                    company_id INTEGER NOT NULL,
+                    FOREIGN KEY(company_id) REFERENCES companies(id)
+                )
+            """);
+
             stmt.execute("""
                 CREATE TABLE order_items (
                     id INTEGER PRIMARY KEY,
                     order_id INTEGER NOT NULL,
                     product_id INTEGER NOT NULL,
-                    quantity INTEGER,
-                    unit_price DECIMAL,
                     FOREIGN KEY(order_id) REFERENCES orders(id),
                     FOREIGN KEY(product_id) REFERENCES products(id)
                 )
             """);
-
-            // Invoices table
-            stmt.execute("""
-                CREATE TABLE invoices (
-                    id INTEGER PRIMARY KEY,
-                    order_id INTEGER NOT NULL,
-                    invoice_date TEXT,
-                    due_date TEXT,
-                    amount DECIMAL,
-                    status TEXT,
-                    FOREIGN KEY(order_id) REFERENCES orders(id)
-                )
-            """);
         }
 
-        System.out.println("✓ Database created with 7 tables\n");
+        System.out.println("✓ In-memory database created.");
     }
 
-    private static void displaySchemaDetails(DatabaseSchema schema) {
-        System.out.println("SCHEMA DETAILS:");
-        System.out.println("-".repeat(80));
+    // ---------------------------------------------------
+    // Schema Display
+    // ---------------------------------------------------
 
-        for (var table : schema.getTables()) {
-            System.out.println("\nTable: " + table.getName());
-            System.out.println("  Columns:");
-            for (var column : table.getColumns()) {
-                System.out.println("    - " + column.getName() + " (" + column.getType() + ")" +
-                        (column.isNullable() ? " [NULLABLE]" : ""));
-            }
+    private static void displaySchema(DatabaseSchema schema) {
 
-            var primaryKeys = table.getPrimaryKeys();
-            if (!primaryKeys.isEmpty()) {
-                System.out.println("  Primary Keys: " + primaryKeys);
-            }
+        System.out.println("\nSCHEMA TABLES:");
+        System.out.println("----------------------------------------");
 
-            var foreignKeys = table.getForeignKeys();
-            if (!foreignKeys.isEmpty()) {
-                System.out.println("  Foreign Keys:");
-                for (var fk : foreignKeys) {
-                    System.out.println("    - " + fk.getColumn() + " -> " +
-                            fk.getReferencedTable() + "(" + fk.getReferencedColumn() + ")");
-                }
-            }
-        }
-
-        System.out.println("\n" + "-".repeat(80));
-        System.out.println("Total tables: " + schema.getTables().size());
+        schema.getTables().forEach(table ->
+                System.out.println(" - " + table.getName())
+        );
     }
 
-    private static void displayDependencyTree(SchemaGraph graph) {
-        System.out.println("DEPENDENCY TREE:");
-        System.out.println("-".repeat(80));
+    // ---------------------------------------------------
+    // Graph Insights
+    // ---------------------------------------------------
+
+    private static void displayGraphInsights(SchemaGraph graph) {
+
+        System.out.println("\nDEPENDENCY TREE:");
+        System.out.println("----------------------------------------");
         System.out.println(graph.toTree());
-        System.out.println("-".repeat(80));
+
+        System.out.println("DFS (orders, depth 2):");
+        System.out.println(
+                graph.traverse("orders", 2,
+                        new DfsTraversalStrategy())
+        );
+
+        System.out.println("\nBFS (orders, depth 2):");
+        System.out.println(
+                graph.traverse("orders", 2,
+                        new BfsTraversalStrategy())
+        );
+
+        System.out.println("\nLEVEL GROUPING (orders):");
+        graph.getLevels("orders").forEach((level, tables) ->
+                System.out.println("Level " + level + " → " + tables)
+        );
+
+        System.out.println("\nDISTANCES (orders):");
+        graph.getDistances("orders").forEach((table, dist) ->
+                System.out.println(table + " → " + dist)
+        );
     }
 
-    private static void generateContextQueries(DatabaseSchema schema, SchemaGraph graph)
-            throws Exception {
+    // ---------------------------------------------------
+    // Context Demonstration
+    // ---------------------------------------------------
 
-        // Full schema context
-        System.out.println("A. FULL SCHEMA CONTEXT");
-        System.out.println("-".repeat(80));
-        ContextStrategy fullStrategy = new FullSchemaStrategy();
-        SchemaContextEngine fullEngine = new SchemaContextEngine(fullStrategy);
-        String fullContext = fullEngine.generate(schema, graph);
-        System.out.println(fullContext);
+    private static void demonstrateContextStrategies(DatabaseSchema schema,
+                                                     SchemaGraph graph) {
 
-        // Focused context: orders (depth 1)
-        System.out.println("\n\nB. FOCUSED CONTEXT: 'orders' table (depth 1)");
-        System.out.println("-".repeat(80));
-        ContextStrategy ordersStrategy = new FocusedSchemaStrategy("orders", 1);
-        SchemaContextEngine ordersEngine = new SchemaContextEngine(ordersStrategy);
-        String ordersContext = ordersEngine.generate(schema, graph);
-        System.out.println(ordersContext);
+        printContext("FULL SCHEMA",
+                new FullSchemaStrategy(),
+                schema, graph);
 
-        // Focused context: products (depth 2)
-        System.out.println("\n\nC. FOCUSED CONTEXT: 'products' table (depth 2)");
-        System.out.println("-".repeat(80));
-        ContextStrategy productsStrategy = new FocusedSchemaStrategy("products", 2);
-        SchemaContextEngine productsEngine = new SchemaContextEngine(productsStrategy);
-        String productsContext = productsEngine.generate(schema, graph);
-        System.out.println(productsContext);
+        printContext("FOCUSED (orders, depth 1, DFS)",
+                new FocusedSchemaStrategy("orders", 1),
+                schema, graph);
 
-        // Focused context: users (depth 1)
-        System.out.println("\n\nD. FOCUSED CONTEXT: 'users' table (depth 1)");
-        System.out.println("-".repeat(80));
-        ContextStrategy usersStrategy = new FocusedSchemaStrategy("users", 1);
-        SchemaContextEngine usersEngine = new SchemaContextEngine(usersStrategy);
-        String usersContext = usersEngine.generate(schema, graph);
-        System.out.println(usersContext);
+        printContext("FOCUSED (orders, depth 2, BFS)",
+                new FocusedSchemaStrategy(
+                        "orders",
+                        2,
+                        new BfsTraversalStrategy()
+                ),
+                schema, graph);
+    }
+
+    private static void printContext(String title,
+                                     ContextStrategy strategy,
+                                     DatabaseSchema schema,
+                                     SchemaGraph graph) {
+
+        System.out.println("\n" + title);
+        System.out.println("----------------------------------------");
+
+        SchemaContextEngine engine =
+                new SchemaContextEngine(strategy);
+
+        System.out.println(engine.generate(schema, graph));
     }
 }

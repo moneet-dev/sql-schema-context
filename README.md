@@ -159,6 +159,17 @@ Run:
 - Multi-schema support
 - Vendor-specific optimization plugins
 
+## Version Roadmap
+
+### v0.1
+Core schema extraction + DFS traversal.
+
+### v0.2 (Planned)
+Distance-aware graph traversal with BFS and level grouping.
+
+### v0.3
+Token-aware context prioritization.
+
 ## 📜 License
 
 MIT

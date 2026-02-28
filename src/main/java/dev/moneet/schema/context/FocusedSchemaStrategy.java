@@ -1,28 +1,40 @@
 package dev.moneet.schema.context;
 
 import dev.moneet.schema.domain.*;
+import dev.moneet.schema.graph.DfsTraversalStrategy;
 import dev.moneet.schema.graph.SchemaGraph;
+import dev.moneet.schema.graph.TraversalStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 public final class FocusedSchemaStrategy implements ContextStrategy {
-
-    private final String targetTable;
+    private final String tableName;
     private final int depth;
+    private final TraversalStrategy traversalStrategy;
+
     private final SchemaFormatter formatter = new SchemaFormatter();
 
-    public FocusedSchemaStrategy(String targetTable, int depth) {
-        this.targetTable = targetTable;
-        this.depth = depth;
+    public FocusedSchemaStrategy(String tableName, int depth) {
+        this(tableName, depth, new DfsTraversalStrategy());
     }
+
+    public FocusedSchemaStrategy(String tableName,
+                                 int depth,
+                                 TraversalStrategy traversalStrategy) {
+
+        this.tableName = tableName;
+        this.depth = depth;
+        this.traversalStrategy = traversalStrategy;
+    }
+
 
     @Override
     public String generate(DatabaseSchema schema, SchemaGraph graph) {
 
         Set<String> relevantTables =
-                graph.getSubgraph(targetTable, depth);
+                graph.traverse(tableName, depth, traversalStrategy);
 
         List<Table> selected = new ArrayList<>();
 
@@ -32,6 +44,6 @@ public final class FocusedSchemaStrategy implements ContextStrategy {
             }
         }
 
-        return formatter.format(selected);
+        return new SchemaFormatter().format(selected);
     }
 }
