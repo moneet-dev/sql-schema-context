@@ -8,41 +8,34 @@ import java.util.*;
 
 public final class SchemaGraphBuilder {
 
+
     public SchemaGraph build(DatabaseSchema schema) {
 
-        Map<String, Set<String>> dependencies = new HashMap<>();
-        Map<String, Set<String>> dependents = new HashMap<>();
+        Map<String, Set<GraphEdge>> outgoing = new LinkedHashMap<>();
+        Map<String, Set<GraphEdge>> incoming = new LinkedHashMap<>();
 
-        // Initialize all tables
         for (Table table : schema.getTables()) {
-            String tableName = table.getName();
-
-            dependencies.put(tableName, new HashSet<>());
-            dependents.put(tableName, new HashSet<>());
+            outgoing.put(table.getName(), new LinkedHashSet<>());
+            incoming.put(table.getName(), new LinkedHashSet<>());
         }
 
-        // Build relationships
         for (Table table : schema.getTables()) {
-
-            String sourceTable = table.getName();
 
             for (ForeignKey fk : table.getForeignKeys()) {
 
-                String targetTable = fk.getReferencedTable();
+                GraphEdge edge = new GraphEdge(
+                        table.getName(),
+                        fk.getReferencedTable(),
+                        fk.getColumn(),
+                        fk.getReferencedColumn()
+                );
 
-                // Add dependency: source → target
-                dependencies.get(sourceTable).add(targetTable);
-
-                // Add reverse mapping: target → source
-                dependents.get(targetTable).add(sourceTable);
+                outgoing.get(table.getName()).add(edge);
+                incoming.get(fk.getReferencedTable()).add(edge);
             }
         }
 
-        // Make immutable before returning
-        Map<String, Set<String>> immutableDependencies = makeImmutable(dependencies);
-        Map<String, Set<String>> immutableDependents = makeImmutable(dependents);
-
-        return new SchemaGraph(immutableDependencies, immutableDependents);
+        return new SchemaGraph(outgoing, incoming);
     }
 
     private Map<String, Set<String>> makeImmutable(Map<String, Set<String>> map) {

@@ -3,6 +3,7 @@ package dev.moneet.schema.context;
 import dev.moneet.schema.domain.*;
 import dev.moneet.schema.graph.DfsTraversalStrategy;
 import dev.moneet.schema.graph.SchemaGraph;
+import dev.moneet.schema.graph.TraversalDirection;
 import dev.moneet.schema.graph.TraversalStrategy;
 
 import java.util.ArrayList;
@@ -13,11 +14,12 @@ public final class FocusedSchemaStrategy implements ContextStrategy {
     private final String tableName;
     private final int depth;
     private final TraversalStrategy traversalStrategy;
+    private final TraversalDirection direction;
 
     private final SchemaFormatter formatter = new SchemaFormatter();
 
     public FocusedSchemaStrategy(String tableName, int depth) {
-        this(tableName, depth, new DfsTraversalStrategy());
+        this(tableName, depth, new DfsTraversalStrategy(), TraversalDirection.BIDIRECTIONAL);
     }
 
     public FocusedSchemaStrategy(String tableName,
@@ -27,6 +29,18 @@ public final class FocusedSchemaStrategy implements ContextStrategy {
         this.tableName = tableName;
         this.depth = depth;
         this.traversalStrategy = traversalStrategy;
+        this.direction = TraversalDirection.BIDIRECTIONAL;
+    }
+
+    public FocusedSchemaStrategy(String tableName,
+                                 int depth,
+                                 TraversalStrategy strategy,
+                                 TraversalDirection direction) {
+
+        this.tableName = tableName;
+        this.depth = depth;
+        this.traversalStrategy = strategy;
+        this.direction = direction;
     }
 
 
@@ -34,7 +48,10 @@ public final class FocusedSchemaStrategy implements ContextStrategy {
     public String generate(DatabaseSchema schema, SchemaGraph graph) {
 
         Set<String> relevantTables =
-                graph.traverse(tableName, depth, traversalStrategy);
+                graph.traverse(tableName,
+                        depth,
+                        traversalStrategy,
+                        direction);
 
         List<Table> selected = new ArrayList<>();
 
