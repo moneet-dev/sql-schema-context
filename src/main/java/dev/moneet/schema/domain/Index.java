@@ -11,4 +11,13 @@ public final class Index {
 		this.columns = columns;
 		this.unique = unique;
 	}
+	public String getName() { return name; }
+	public List<String> getColumns() { return columns; }
+	public boolean isUnique() { return unique; }
+
+	@Override
+	public String toString() {
+		return name + " " + columns +
+				(unique ? " [UNIQUE]" : "");
+	}
 }

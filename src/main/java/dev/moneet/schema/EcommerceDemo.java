@@ -8,8 +8,9 @@ import dev.moneet.schema.jdbc.JdbcSchemaMetadataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.List;
 
-public class Main {
+public class EcommerceDemo {
 
     public static void main(String[] args) throws Exception {
 
@@ -28,6 +29,7 @@ public class Main {
 
         displaySchema(schema);
         displayGraphInsights(graph);
+        displayShortestPathExamples(schema, graph);
 
         System.out.println("\n3. CONTEXT GENERATION...");
         demonstrateContextStrategies(schema, graph);
@@ -36,19 +38,19 @@ public class Main {
         System.out.println("\nDemo complete.");
     }
 
-    // ---------------------------------------------------
+    // =====================================================
     // Banner
-    // ---------------------------------------------------
+    // =====================================================
 
     private static void banner() {
         System.out.println("========================================");
-        System.out.println("   Schema Context Engine (v0.2 Demo)");
+        System.out.println("   Schema Context Engine (v0.3 Demo)");
         System.out.println("========================================");
     }
 
-    // ---------------------------------------------------
+    // =====================================================
     // Schema Creation
-    // ---------------------------------------------------
+    // =====================================================
 
     private static void createProductionDatabase(Connection conn) throws Exception {
 
@@ -110,9 +112,9 @@ public class Main {
         System.out.println("✓ In-memory database created.");
     }
 
-    // ---------------------------------------------------
+    // =====================================================
     // Schema Display
-    // ---------------------------------------------------
+    // =====================================================
 
     private static void displaySchema(DatabaseSchema schema) {
 
@@ -124,9 +126,9 @@ public class Main {
         );
     }
 
-    // ---------------------------------------------------
+    // =====================================================
     // Graph Insights
-    // ---------------------------------------------------
+    // =====================================================
 
     private static void displayGraphInsights(SchemaGraph graph) {
 
@@ -134,16 +136,34 @@ public class Main {
         System.out.println("----------------------------------------");
         System.out.println(graph.toTree());
 
-        System.out.println("DFS (orders, depth 2):");
+        System.out.println("\nDFS (orders, depth 2, BIDIRECTIONAL):");
         System.out.println(
-                graph.traverse("orders", 2,
-                        new DfsTraversalStrategy())
+                graph.traverse(
+                        "orders",
+                        2,
+                        new DfsTraversalStrategy(),
+                        TraversalDirection.BIDIRECTIONAL
+                )
         );
 
-        System.out.println("\nBFS (orders, depth 2):");
+        System.out.println("\nBFS (orders, depth 2, DEPENDENCIES_ONLY):");
         System.out.println(
-                graph.traverse("orders", 2,
-                        new BfsTraversalStrategy())
+                graph.traverse(
+                        "orders",
+                        2,
+                        new BfsTraversalStrategy(),
+                        TraversalDirection.DEPENDENCIES_ONLY
+                )
+        );
+
+        System.out.println("\nBFS (orders, depth 2, DEPENDENTS_ONLY):");
+        System.out.println(
+                graph.traverse(
+                        "orders",
+                        2,
+                        new BfsTraversalStrategy(),
+                        TraversalDirection.DEPENDENTS_ONLY
+                )
         );
 
         System.out.println("\nLEVEL GROUPING (orders):");
@@ -157,9 +177,53 @@ public class Main {
         );
     }
 
-    // ---------------------------------------------------
+    // =====================================================
+    // Shortest Path + Join Quality
+    // =====================================================
+
+    private static void displayShortestPathExamples(DatabaseSchema schema,
+                                                    SchemaGraph graph) {
+
+        System.out.println("\nSHORTEST PATH (orders → companies, DEPENDENCIES_ONLY)");
+        System.out.println("----------------------------------------");
+
+        List<GraphEdge> path =
+                graph.getShortestPathEdges(
+                        "orders",
+                        "companies",
+                        TraversalDirection.DEPENDENCIES_ONLY
+                );
+
+        if (path.isEmpty()) {
+            System.out.println("No path found.");
+        } else {
+            System.out.println(
+                    JoinPathFormatter.formatWithQuality(path, schema)
+            );
+        }
+
+        System.out.println("\nSHORTEST PATH (users → order_items, DEPENDENTS_ONLY)");
+        System.out.println("----------------------------------------");
+
+        List<GraphEdge> downstreamPath =
+                graph.getShortestPathEdges(
+                        "users",
+                        "order_items",
+                        TraversalDirection.DEPENDENTS_ONLY
+                );
+
+        if (downstreamPath.isEmpty()) {
+            System.out.println("No path found.");
+        } else {
+            System.out.println(
+                    JoinPathFormatter.formatWithQuality(downstreamPath, schema)
+            );
+        }
+    }
+
+    // =====================================================
     // Context Demonstration
-    // ---------------------------------------------------
+    // =====================================================
 
     private static void demonstrateContextStrategies(DatabaseSchema schema,
                                                      SchemaGraph graph) {
@@ -169,14 +233,20 @@ public class Main {
                 schema, graph);
 
         printContext("FOCUSED (orders, depth 1, DFS)",
-                new FocusedSchemaStrategy("orders", 1),
+                new FocusedSchemaStrategy(
+                        "orders",
+                        1,
+                        new DfsTraversalStrategy(),
+                        TraversalDirection.BIDIRECTIONAL
+                ),
                 schema, graph);
 
-        printContext("FOCUSED (orders, depth 2, BFS)",
+        printContext("FOCUSED (orders, depth 2, BFS, DEPENDENCIES_ONLY)",
                 new FocusedSchemaStrategy(
                         "orders",
                         2,
-                        new BfsTraversalStrategy()
+                        new BfsTraversalStrategy(),
+                        TraversalDirection.DEPENDENCIES_ONLY
                 ),
                 schema, graph);
     }

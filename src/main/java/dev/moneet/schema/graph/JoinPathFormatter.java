@@ -1,15 +1,25 @@
 package dev.moneet.schema.graph;
 
+import dev.moneet.schema.domain.DatabaseSchema;
+
 import java.util.List;
 
 public final class JoinPathFormatter {
 
-    public static String format(List<GraphEdge> edges) {
+    public static String formatWithQuality(
+            List<GraphEdge> path,
+            DatabaseSchema schema) {
 
         StringBuilder sb = new StringBuilder();
         sb.append("Join Path:\n");
 
-        for (GraphEdge edge : edges) {
+        List<JoinAnalysisResult> results =
+                JoinPathAnalyzer.analyze(path, schema);
+
+        for (JoinAnalysisResult result : results) {
+
+            GraphEdge edge = result.getEdge();
+
             sb.append(" - ")
                     .append(edge.getFromTable())
                     .append(".")
@@ -18,7 +28,9 @@ public final class JoinPathFormatter {
                     .append(edge.getToTable())
                     .append(".")
                     .append(edge.getToColumn())
-                    .append("\n");
+                    .append("  [")
+                    .append(result.getQuality())
+                    .append("]\n");
         }
 
         return sb.toString();
