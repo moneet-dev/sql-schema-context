@@ -8,24 +8,27 @@ import java.util.List;
 
 public class TableExtractor {
 
-    public List<String> extractTables(DatabaseMetaData metaData, String schema) {
+    public List<String> extractTables(DatabaseMetaData metaData,
+                                      String catalog,
+                                      String schema) {
 
         List<String> tables = new ArrayList<>();
 
         try (ResultSet rs = metaData.getTables(
-                null,                 // catalog (rarely needed)
-                schema,               // schema filter
-                "%",                  // table name pattern
-                new String[]{"TABLE"} // restrict to real tables
+                catalog,
+                schema,
+                "%",
+                new String[]{"TABLE"}
         )) {
 
             while (rs.next()) {
-                String tableName = rs.getString("TABLE_NAME");
-                tables.add(tableName);
+                tables.add(rs.getString("TABLE_NAME"));
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to extract tables for schema: " + schema, e);
+            throw new RuntimeException(
+                    "Failed to extract tables for catalog: "
+                            + catalog + ", schema: " + schema, e);
         }
 
         return tables;

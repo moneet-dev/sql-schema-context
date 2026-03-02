@@ -11,12 +11,13 @@ import java.util.Set;
 public class PrimaryKeyExtractor {
 
     public Set<PrimaryKey> extract(DatabaseMetaData metaData,
+                                   String catalog,
                                    String schema,
                                    String tableName) {
 
         Set<PrimaryKey> primaryKeys = new LinkedHashSet<>();
 
-        try (ResultSet rs = metaData.getPrimaryKeys(null, schema, tableName)) {
+        try (ResultSet rs = metaData.getPrimaryKeys(catalog, schema, tableName)) {
 
             while (rs.next()) {
 

@@ -10,6 +10,7 @@ import java.util.*;
 public class IndexExtractor {
 
     public List<Index> extract(DatabaseMetaData metaData,
+                               String catalog,
                                String schema,
                                String tableName) {
 
@@ -17,7 +18,7 @@ public class IndexExtractor {
         Map<String, Boolean> uniqueness = new HashMap<>();
 
         try (ResultSet rs = metaData.getIndexInfo(
-                null,
+                catalog,
                 schema,
                 tableName,
                 false,

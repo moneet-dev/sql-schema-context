@@ -11,12 +11,13 @@ import java.util.List;
 public class ForeignKeyExtractor {
 
     public List<ForeignKey> extract(DatabaseMetaData metaData,
+                                    String catalog,
                                     String schema,
                                     String tableName) {
 
         List<ForeignKey> foreignKeys = new ArrayList<>();
 
-        try (ResultSet rs = metaData.getImportedKeys(null, schema, tableName)) {
+        try (ResultSet rs = metaData.getImportedKeys(catalog, schema, tableName)) {
 
             while (rs.next()) {
 
