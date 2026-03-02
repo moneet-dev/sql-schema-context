@@ -1,47 +1,79 @@
 # Changelog
 
-## [0.2.0] - Distance-aware Traversal
+All notable changes to this project are documented here.
+
+---
+
+## v0.4 – Minimal Multi-Vendor Metadata Support
 
 ### Added
-- TraversalStrategy abstraction
-- BfsTraversalStrategy
-- Level grouping API (getLevels)
-- Distance API (getDistances)
 
-### Refactored
-- Extracted DFS logic into DfsTraversalStrategy
-
-### Notes
-- No breaking changes
-- Existing getSubgraph() behavior preserved
-
-## [0.3.0] - Edge-Based Graph & Shortest Path
-
-### Added
-- GraphEdge class representing FK relationships
-- Edge-aware SchemaGraph implementation
-- Shortest path reconstruction via getShortestPathEdges()
-- Join path foundation for SQL guidance
-- Directional traversal support:
-    - DEPENDENCIES_ONLY
-    - DEPENDENTS_ONLY
-    - BIDIRECTIONAL
-
-### Refactored
-- Replaced adjacency map (table → table) with edge-based graph
-- Updated traversal logic to operate on GraphEdge
-- Preserved backward-compatible APIs:
-    - getDependencies()
-    - getDependents()
-    - getSubgraph()
-    - traverse()
+- `DatabaseVendor` enum for vendor detection
+- Vendor resolution via `DatabaseMetaData#getDatabaseProductName()`
+- Schema resolution logic:
+  - PostgreSQL → public
+  - MySQL → uses catalog
+  - SQL Server → dbo
+  - Oracle → current user
+- Catalog + schema passed to all extractors
+- Identifier normalization using JDBC metadata flags
+- Multi-vendor compatibility for:
+  - Table extraction
+  - Column extraction
+  - Primary key extraction
+  - Foreign key extraction
+  - Index extraction
 
 ### Improved
-- Deterministic traversal ordering
-- Semantic graph reasoning
-- Explicit FK-based join reconstruction
+
+- Graph consistency across different JDBC drivers
+- Reduced risk of identifier mismatch due to case handling
+- Cleaner extraction flow in `JdbcSchemaMetadataSource`
+
+### Architectural Decisions
+
+- No dialect abstraction layer introduced
+- No plugin mechanism added
+- Vendor handling remains minimal and localized
+- Design remains metadata-only
 
 ### Notes
-- No breaking public API changes
-- Internal graph representation refactored
-- Traversal strategies remain compatible
+
+Multi-vendor support validated against:
+
+- SQLite
+- PostgreSQL
+- MySQL
+
+Docker/Testcontainers not required for local development.
+
+---
+
+## v0.3 – Graph Enhancements
+
+- Edge-based `SchemaGraph`
+- Directional traversal support
+- BFS + DFS strategies
+- Shortest path detection
+- Join path formatting
+- Index-aware join quality hints
+- Level grouping API
+- Distance map API
+
+---
+
+## v0.2 – Context Engine
+
+- `FullSchemaStrategy`
+- `FocusedSchemaStrategy`
+- Depth-controlled traversal
+- Context generation engine
+
+---
+
+## v0.1 – Core Extraction + DFS
+
+- JDBC metadata extraction
+- Domain modeling
+- Basic graph building
+- DFS traversal

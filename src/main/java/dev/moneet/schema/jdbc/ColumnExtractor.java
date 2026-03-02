@@ -11,13 +11,14 @@ import java.util.List;
 public class ColumnExtractor {
 
     public List<Column> extract(DatabaseMetaData metaData,
+                                String catalog,
                                 String schema,
-                                String tableName) {
+                                String tableName){
 
         List<Column> columns = new ArrayList<>();
 
         try (ResultSet rs = metaData.getColumns(
-                null,
+                catalog,
                 schema,
                 tableName,
                 "%"
