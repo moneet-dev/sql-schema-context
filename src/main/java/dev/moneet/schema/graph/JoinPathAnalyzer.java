@@ -1,8 +1,14 @@
 package dev.moneet.schema.graph;
 
-import dev.moneet.schema.domain.*;
+import dev.moneet.schema.domain.DatabaseSchema;
+import dev.moneet.schema.domain.Index;
+import dev.moneet.schema.domain.PrimaryKey;
+import dev.moneet.schema.domain.Table;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class JoinPathAnalyzer {
 

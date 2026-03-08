@@ -1,25 +1,25 @@
 package dev.moneet.schema.domain;
 
 public final class Column {
-	String name;
-	String type;
-	boolean nullable;
+    String name;
+    String type;
+    boolean nullable;
 
-	public Column(String name, String type, boolean nullable) {
-		this.name = name;
-		this.type = type;
-		this.nullable = nullable;
-	}
+    public Column(String name, String type, boolean nullable) {
+        this.name = name;
+        this.type = type;
+        this.nullable = nullable;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getType() {
-		return type;
-	}
+    public String getType() {
+        return type;
+    }
 
-	public boolean isNullable() {
-		return nullable;
-	}
+    public boolean isNullable() {
+        return nullable;
+    }
 }

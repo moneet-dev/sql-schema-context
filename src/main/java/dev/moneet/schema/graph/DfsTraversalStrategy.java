@@ -8,13 +8,14 @@ public final class DfsTraversalStrategy implements TraversalStrategy {
     @Override
     public Set<String> traverse(String start, int depth, SchemaGraph graph) {
         Set<String> visited = new LinkedHashSet<>();
-        dfs(start, depth, graph, visited,TraversalDirection.BIDIRECTIONAL);
-        return visited;    }
+        dfs(start, depth, graph, visited, TraversalDirection.BIDIRECTIONAL);
+        return visited;
+    }
 
     @Override
     public Set<String> traverse(String start, int depth, SchemaGraph graph, TraversalDirection direction) {
         Set<String> visited = new LinkedHashSet<>();
-        dfs(start, depth, graph, visited,direction);
+        dfs(start, depth, graph, visited, direction);
         return visited;
     }
 

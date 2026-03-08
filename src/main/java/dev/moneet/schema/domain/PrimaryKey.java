@@ -7,7 +7,7 @@ public final class PrimaryKey {
     private final String columnName;
 
     public PrimaryKey(String columnName) {
-        this.columnName = Objects.requireNonNull(columnName, 
+        this.columnName = Objects.requireNonNull(columnName,
                 "columnName must not be null");
     }
 

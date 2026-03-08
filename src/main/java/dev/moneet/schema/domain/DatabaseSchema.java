@@ -21,7 +21,7 @@ public final class DatabaseSchema {
         return tables.stream()
                 .filter(t -> t.getName().equalsIgnoreCase(name))
                 .findFirst()
-                .orElseThrow(() -> 
+                .orElseThrow(() ->
                         new IllegalArgumentException("Table not found: " + name));
     }
 

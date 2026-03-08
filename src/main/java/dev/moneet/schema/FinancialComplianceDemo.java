@@ -1,6 +1,9 @@
 package dev.moneet.schema;
 
-import dev.moneet.schema.context.*;
+import dev.moneet.schema.context.ContextStrategy;
+import dev.moneet.schema.context.FocusedSchemaStrategy;
+import dev.moneet.schema.context.FullSchemaStrategy;
+import dev.moneet.schema.context.SchemaContextEngine;
 import dev.moneet.schema.domain.DatabaseSchema;
 import dev.moneet.schema.graph.*;
 import dev.moneet.schema.jdbc.JdbcSchemaMetadataSource;
@@ -67,112 +70,112 @@ public class FinancialComplianceDemo {
         try (Statement stmt = conn.createStatement()) {
 
             stmt.execute("""
-                CREATE TABLE regulators (
-                    regulator_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    agency_name TEXT NOT NULL UNIQUE,
-                    jurisdiction_country TEXT NOT NULL,
-                    reporting_threshold_usd DECIMAL(15, 2) NOT NULL
-                )
-            """);
+                        CREATE TABLE regulators (
+                            regulator_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            agency_name TEXT NOT NULL UNIQUE,
+                            jurisdiction_country TEXT NOT NULL,
+                            reporting_threshold_usd DECIMAL(15, 2) NOT NULL
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE transaction_codes (
-                    code_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    iso_code TEXT NOT NULL UNIQUE,
-                    description TEXT NOT NULL,
-                    high_risk_flag BOOLEAN NOT NULL DEFAULT 0
-                )
-            """);
+                        CREATE TABLE transaction_codes (
+                            code_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            iso_code TEXT NOT NULL UNIQUE,
+                            description TEXT NOT NULL,
+                            high_risk_flag BOOLEAN NOT NULL DEFAULT 0
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE sanctions_lists (
-                    list_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    list_name TEXT NOT NULL UNIQUE,
-                    issuing_body TEXT NOT NULL
-                )
-            """);
+                        CREATE TABLE sanctions_lists (
+                            list_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            list_name TEXT NOT NULL UNIQUE,
+                            issuing_body TEXT NOT NULL
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE legal_entities (
-                    entity_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    lei_code TEXT UNIQUE,
-                    primary_name TEXT NOT NULL,
-                    domicile_country TEXT NOT NULL,
-                    incorporation_date DATE
-                )
-            """);
+                        CREATE TABLE legal_entities (
+                            entity_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            lei_code TEXT UNIQUE,
+                            primary_name TEXT NOT NULL,
+                            domicile_country TEXT NOT NULL,
+                            incorporation_date DATE
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE kyc_profiles (
-                    profile_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    entity_id INTEGER NOT NULL,
-                    risk_rating TEXT NOT NULL CHECK(risk_rating IN ('LOW', 'MEDIUM', 'HIGH', 'UNACCEPTABLE')),
-                    last_review_date DATE NOT NULL,
-                    next_review_date DATE NOT NULL,
-                    FOREIGN KEY(entity_id) REFERENCES legal_entities(entity_id) ON DELETE CASCADE
-                )
-            """);
+                        CREATE TABLE kyc_profiles (
+                            profile_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            entity_id INTEGER NOT NULL,
+                            risk_rating TEXT NOT NULL CHECK(risk_rating IN ('LOW', 'MEDIUM', 'HIGH', 'UNACCEPTABLE')),
+                            last_review_date DATE NOT NULL,
+                            next_review_date DATE NOT NULL,
+                            FOREIGN KEY(entity_id) REFERENCES legal_entities(entity_id) ON DELETE CASCADE
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE entity_sanctions_hits (
-                    entity_id INTEGER NOT NULL,
-                    list_id INTEGER NOT NULL,
-                    match_score DECIMAL(5, 2) NOT NULL,
-                    review_status TEXT NOT NULL CHECK(review_status IN ('PENDING', 'FALSE_POSITIVE', 'CONFIRMED')),
-                    PRIMARY KEY (entity_id, list_id),
-                    FOREIGN KEY(entity_id) REFERENCES legal_entities(entity_id),
-                    FOREIGN KEY(list_id) REFERENCES sanctions_lists(list_id)
-                )
-            """);
+                        CREATE TABLE entity_sanctions_hits (
+                            entity_id INTEGER NOT NULL,
+                            list_id INTEGER NOT NULL,
+                            match_score DECIMAL(5, 2) NOT NULL,
+                            review_status TEXT NOT NULL CHECK(review_status IN ('PENDING', 'FALSE_POSITIVE', 'CONFIRMED')),
+                            PRIMARY KEY (entity_id, list_id),
+                            FOREIGN KEY(entity_id) REFERENCES legal_entities(entity_id),
+                            FOREIGN KEY(list_id) REFERENCES sanctions_lists(list_id)
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE accounts (
-                    account_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    entity_id INTEGER NOT NULL,
-                    account_number TEXT NOT NULL UNIQUE,
-                    base_currency TEXT NOT NULL CHECK(length(base_currency) = 3),
-                    status TEXT NOT NULL CHECK(status IN ('OPEN', 'BLOCKED', 'CLOSED')),
-                    FOREIGN KEY(entity_id) REFERENCES legal_entities(entity_id)
-                )
-            """);
+                        CREATE TABLE accounts (
+                            account_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            entity_id INTEGER NOT NULL,
+                            account_number TEXT NOT NULL UNIQUE,
+                            base_currency TEXT NOT NULL CHECK(length(base_currency) = 3),
+                            status TEXT NOT NULL CHECK(status IN ('OPEN', 'BLOCKED', 'CLOSED')),
+                            FOREIGN KEY(entity_id) REFERENCES legal_entities(entity_id)
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE transactions (
-                    transaction_id TEXT PRIMARY KEY,
-                    source_account_id INTEGER,
-                    dest_account_id INTEGER,
-                    code_id INTEGER NOT NULL,
-                    amount DECIMAL(18, 4) NOT NULL,
-                    settlement_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(source_account_id) REFERENCES accounts(account_id),
-                    FOREIGN KEY(dest_account_id) REFERENCES accounts(account_id),
-                    FOREIGN KEY(code_id) REFERENCES transaction_codes(code_id)
-                )
-            """);
+                        CREATE TABLE transactions (
+                            transaction_id TEXT PRIMARY KEY,
+                            source_account_id INTEGER,
+                            dest_account_id INTEGER,
+                            code_id INTEGER NOT NULL,
+                            amount DECIMAL(18, 4) NOT NULL,
+                            settlement_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY(source_account_id) REFERENCES accounts(account_id),
+                            FOREIGN KEY(dest_account_id) REFERENCES accounts(account_id),
+                            FOREIGN KEY(code_id) REFERENCES transaction_codes(code_id)
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE aml_alerts (
-                    alert_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    transaction_id TEXT NOT NULL,
-                    rule_triggered TEXT NOT NULL CHECK(rule_triggered IN ('VELOCITY', 'STRUCTURING', 'SANCTION_HIT', 'THRESHOLD_EXCEEDED')),
-                    alert_timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    investigator_notes TEXT,
-                    FOREIGN KEY(transaction_id) REFERENCES transactions(transaction_id)
-                )
-            """);
+                        CREATE TABLE aml_alerts (
+                            alert_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            transaction_id TEXT NOT NULL,
+                            rule_triggered TEXT NOT NULL CHECK(rule_triggered IN ('VELOCITY', 'STRUCTURING', 'SANCTION_HIT', 'THRESHOLD_EXCEEDED')),
+                            alert_timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                            investigator_notes TEXT,
+                            FOREIGN KEY(transaction_id) REFERENCES transactions(transaction_id)
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE sar_filings (
-                    alert_id INTEGER NOT NULL,
-                    regulator_id INTEGER NOT NULL,
-                    filing_date DATE NOT NULL,
-                    acknowledgement_id TEXT,
-                    status TEXT NOT NULL CHECK(status IN ('DRAFT', 'SUBMITTED', 'ACCEPTED', 'REJECTED')),
-                    PRIMARY KEY (alert_id, regulator_id),
-                    FOREIGN KEY(alert_id) REFERENCES aml_alerts(alert_id),
-                    FOREIGN KEY(regulator_id) REFERENCES regulators(regulator_id)
-                )
-            """);
+                        CREATE TABLE sar_filings (
+                            alert_id INTEGER NOT NULL,
+                            regulator_id INTEGER NOT NULL,
+                            filing_date DATE NOT NULL,
+                            acknowledgement_id TEXT,
+                            status TEXT NOT NULL CHECK(status IN ('DRAFT', 'SUBMITTED', 'ACCEPTED', 'REJECTED')),
+                            PRIMARY KEY (alert_id, regulator_id),
+                            FOREIGN KEY(alert_id) REFERENCES aml_alerts(alert_id),
+                            FOREIGN KEY(regulator_id) REFERENCES regulators(regulator_id)
+                        )
+                    """);
 
             // Enterprise Indexes
             stmt.execute("CREATE INDEX idx_tx_source ON transactions(source_account_id)");
