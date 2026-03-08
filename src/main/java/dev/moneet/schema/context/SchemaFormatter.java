@@ -1,8 +1,13 @@
 package dev.moneet.schema.context;
 
-import dev.moneet.schema.domain.*;
+import dev.moneet.schema.domain.Column;
+import dev.moneet.schema.domain.Index;
+import dev.moneet.schema.domain.PrimaryKey;
+import dev.moneet.schema.domain.Table;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public final class SchemaFormatter {
 

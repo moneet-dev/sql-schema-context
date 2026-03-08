@@ -1,6 +1,9 @@
 package dev.moneet.schema;
 
-import dev.moneet.schema.context.*;
+import dev.moneet.schema.context.ContextStrategy;
+import dev.moneet.schema.context.FocusedSchemaStrategy;
+import dev.moneet.schema.context.FullSchemaStrategy;
+import dev.moneet.schema.context.SchemaContextEngine;
 import dev.moneet.schema.domain.DatabaseSchema;
 import dev.moneet.schema.graph.*;
 import dev.moneet.schema.jdbc.JdbcSchemaMetadataSource;
@@ -57,56 +60,56 @@ public class EcommerceDemo {
         try (Statement stmt = conn.createStatement()) {
 
             stmt.execute("""
-                CREATE TABLE companies (
-                    id INTEGER PRIMARY KEY,
-                    name TEXT NOT NULL
-                )
-            """);
+                        CREATE TABLE companies (
+                            id INTEGER PRIMARY KEY,
+                            name TEXT NOT NULL
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE users (
-                    id INTEGER PRIMARY KEY,
-                    company_id INTEGER NOT NULL,
-                    email TEXT NOT NULL,
-                    FOREIGN KEY(company_id) REFERENCES companies(id)
-                )
-            """);
+                        CREATE TABLE users (
+                            id INTEGER PRIMARY KEY,
+                            company_id INTEGER NOT NULL,
+                            email TEXT NOT NULL,
+                            FOREIGN KEY(company_id) REFERENCES companies(id)
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE accounts (
-                    id INTEGER PRIMARY KEY,
-                    company_id INTEGER NOT NULL,
-                    FOREIGN KEY(company_id) REFERENCES companies(id)
-                )
-            """);
+                        CREATE TABLE accounts (
+                            id INTEGER PRIMARY KEY,
+                            company_id INTEGER NOT NULL,
+                            FOREIGN KEY(company_id) REFERENCES companies(id)
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE orders (
-                    id INTEGER PRIMARY KEY,
-                    user_id INTEGER NOT NULL,
-                    account_id INTEGER,
-                    FOREIGN KEY(user_id) REFERENCES users(id),
-                    FOREIGN KEY(account_id) REFERENCES accounts(id)
-                )
-            """);
+                        CREATE TABLE orders (
+                            id INTEGER PRIMARY KEY,
+                            user_id INTEGER NOT NULL,
+                            account_id INTEGER,
+                            FOREIGN KEY(user_id) REFERENCES users(id),
+                            FOREIGN KEY(account_id) REFERENCES accounts(id)
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE products (
-                    id INTEGER PRIMARY KEY,
-                    company_id INTEGER NOT NULL,
-                    FOREIGN KEY(company_id) REFERENCES companies(id)
-                )
-            """);
+                        CREATE TABLE products (
+                            id INTEGER PRIMARY KEY,
+                            company_id INTEGER NOT NULL,
+                            FOREIGN KEY(company_id) REFERENCES companies(id)
+                        )
+                    """);
 
             stmt.execute("""
-                CREATE TABLE order_items (
-                    id INTEGER PRIMARY KEY,
-                    order_id INTEGER NOT NULL,
-                    product_id INTEGER NOT NULL,
-                    FOREIGN KEY(order_id) REFERENCES orders(id),
-                    FOREIGN KEY(product_id) REFERENCES products(id)
-                )
-            """);
+                        CREATE TABLE order_items (
+                            id INTEGER PRIMARY KEY,
+                            order_id INTEGER NOT NULL,
+                            product_id INTEGER NOT NULL,
+                            FOREIGN KEY(order_id) REFERENCES orders(id),
+                            FOREIGN KEY(product_id) REFERENCES products(id)
+                        )
+                    """);
         }
 
         System.out.println("✓ In-memory database created.");

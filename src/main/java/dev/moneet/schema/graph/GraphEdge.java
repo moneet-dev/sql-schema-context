@@ -20,10 +20,21 @@ public final class GraphEdge {
         this.toColumn = toColumn;
     }
 
-    public String getFromTable() { return fromTable; }
-    public String getToTable() { return toTable; }
-    public String getFromColumn() { return fromColumn; }
-    public String getToColumn() { return toColumn; }
+    public String getFromTable() {
+        return fromTable;
+    }
+
+    public String getToTable() {
+        return toTable;
+    }
+
+    public String getFromColumn() {
+        return fromColumn;
+    }
+
+    public String getToColumn() {
+        return toColumn;
+    }
 
     @Override
     public boolean equals(Object o) {

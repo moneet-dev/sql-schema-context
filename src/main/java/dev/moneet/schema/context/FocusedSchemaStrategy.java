@@ -1,6 +1,7 @@
 package dev.moneet.schema.context;
 
-import dev.moneet.schema.domain.*;
+import dev.moneet.schema.domain.DatabaseSchema;
+import dev.moneet.schema.domain.Table;
 import dev.moneet.schema.graph.DfsTraversalStrategy;
 import dev.moneet.schema.graph.SchemaGraph;
 import dev.moneet.schema.graph.TraversalDirection;

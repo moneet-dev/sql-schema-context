@@ -7,7 +7,7 @@ public interface TraversalStrategy {
 
     /**
      * Traverses the graph starting from a table.
-     *
+     * <p>
      * Traversal is bidirectional (dependencies + dependents).
      *
      * @param start starting table
@@ -20,4 +20,5 @@ public interface TraversalStrategy {
             int depth,
             SchemaGraph graph,
             TraversalDirection direction
-    );}
+    );
+}

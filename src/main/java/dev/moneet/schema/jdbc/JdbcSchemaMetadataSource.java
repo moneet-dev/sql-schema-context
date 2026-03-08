@@ -1,6 +1,8 @@
 package dev.moneet.schema.jdbc;
 
-import dev.moneet.schema.domain.*;
+import dev.moneet.schema.domain.Column;
+import dev.moneet.schema.domain.DatabaseSchema;
+import dev.moneet.schema.domain.Table;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
